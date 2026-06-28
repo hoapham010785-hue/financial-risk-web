@@ -238,21 +238,31 @@ with tab1:
 
     for i, col in enumerate(trained["X_columns"]):
         target_col = [col1, col2, col3][i % 3]
+        s = X_template[col]
 
-        if X_template[col].dtype == "object":
-            options = sorted(X_template[col].dropna().unique().tolist())
+        # Nếu là biến phân loại thì dùng selectbox
+        if s.dtype == "object" or str(s.dtype) == "category":
+            options = sorted(s.dropna().astype(str).unique().tolist())
             user_input[col] = target_col.selectbox(col, options)
-        else:
-            min_val = float(X_template[col].min())
-            max_val = float(X_template[col].max())
-            mean_val = float(X_template[col].mean())
 
-            user_input[col] = target_col.number_input(
-                col,
-                min_value=min_val,
-                max_value=max_val,
-                value=mean_val
-            )
+        # Nếu là biến số thì dùng number_input
+        else:
+            s_num = pd.to_numeric(s, errors="coerce").dropna()
+
+            # Trường hợp cột lỗi hoặc toàn bộ giá trị rỗng
+            if s_num.empty:
+                user_input[col] = target_col.number_input(col, value=0.0)
+            else:
+                min_val = float(s_num.min())
+                max_val = float(s_num.max())
+                mean_val = float(s_num.mean())
+
+                user_input[col] = target_col.number_input(
+                    col,
+                    min_value=min_val,
+                    max_value=max_val,
+                    value=mean_val
+                )
 
     input_df = pd.DataFrame([user_input])
 
